@@ -48,8 +48,10 @@ npx serve .        # または python3 -m http.server など任意の静的サ�
 
 ## 翻訳の仕組み
 
-1. **辞書**: GitHub上のNadsat辞書 [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)
-   の全エントリを逐語照合して収録(カタカナ表記・日本語の意味・語源付き)。
+1. **辞書**: GitHub上の公開Nadsat辞書2種
+   ([prozum/nadsat-dict](https://github.com/prozum/nadsat-dict) と
+   [m00k/nadsat-dictionary](https://github.com/m00k/nadsat-dictionary))の
+   全エントリを逐語照合して収録(カタカナ表記・日本語の意味・語源付き)。
    bedways / tick-tocker 等の補遺語は Wiktionary「Appendix: A Clockwork Orange」より
 2. **活用展開**: 動詞は「飲む/飲んだ/飲んで/飲みます…」→「ピートする/ピートした/
    ピートして/ピートします…」のように活用ごとに写像。い形容詞は
@@ -57,6 +59,9 @@ npx serve .        # または python3 -m http.server など任意の静的サ�
 3. **最長一致置換**: 文字列を先頭から走査し、最も長く一致する語を置換。
    「駄目」「音楽」「手紙」など、単漢字キーが熟語を壊さないよう
    ブロックリストで保護
+4. **表記揺れ対応**: 入力はNFKC正規化(半角カナ「ﾀﾊﾞｺ」等を吸収)し、
+   かなのみの語はひらがな⇔カタカナを自動相互登録
+   (「トモダチ」「たばこ」「いらいら」等もマッチ)
 
 形態素解析器を使わない軽量な実装のため、稀に複合語が意図せず変換されることが
 あります(それはそれでナッドサットらしい味になります)。
@@ -72,5 +77,6 @@ node scripts/generate-dictionary-md.js   # 対応表の再生成
 
 - Nadsat は Anthony Burgess『A Clockwork Orange』(1962) の造語スラング
 - 語彙の出典:
-  [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)(主要ソース・全エントリ照合済み)、
+  [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)(原作巻末辞典系・全エントリ照合済み)、
+  [m00k/nadsat-dictionary](https://github.com/m00k/nadsat-dictionary)(映画版追加語を含む拡張版・全エントリ照合済み)、
   [Wiktionary: Appendix: A Clockwork Orange](https://en.wiktionary.org/wiki/Appendix:A_Clockwork_Orange)(補遺)

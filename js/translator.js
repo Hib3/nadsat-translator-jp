@@ -98,6 +98,36 @@
     return pairs;
   }
 
+  /* ---------- 表記揺れ対応 ---------- */
+
+  /**
+   * かな表記の相互変換(ひらがな⇔カタカナ)。
+   * かなだけで構成される表層形に対し、もう一方の表記のキーも自動登録する。
+   * 例: タバコ→たばこ、ともだち→トモダチ
+   * 短いかな語(2文字以下)は「あいさつ」の「さつ」のような
+   * 部分一致事故を招くため対象外(必要なものは辞書に手動登録)。
+   */
+  function kanaTwin(surface) {
+    if ([...surface].length < 3) return null;
+    let out = "";
+    let changed = false;
+    for (const ch of surface) {
+      const c = ch.codePointAt(0);
+      if (c >= 0x3041 && c <= 0x3096) {
+        out += String.fromCodePoint(c + 0x60); // ひらがな → カタカナ
+        changed = true;
+      } else if (c >= 0x30a1 && c <= 0x30f6) {
+        out += String.fromCodePoint(c - 0x60); // カタカナ → ひらがな
+        changed = true;
+      } else if (ch === "ー" || ch === "・") {
+        out += ch;
+      } else {
+        return null; // 漢字・英数字などを含む語は対象外
+      }
+    }
+    return changed ? out : null;
+  }
+
   /* ---------- 変換テーブル構築 ---------- */
 
   function buildTable() {
@@ -106,6 +136,8 @@
     const add = (surface, out, entry) => {
       if (!surface || table.has(surface)) return;
       table.set(surface, { out, entry });
+      const twin = kanaTwin(surface);
+      if (twin && !table.has(twin)) table.set(twin, { out, entry });
     };
 
     // ブロックリスト: そのまま残す(entry=null)
@@ -156,7 +188,9 @@
    * @returns {Array<{text: string, nadsat: boolean, orig?: string, entry?: object}>}
    *   トークン列。nadsat=true のトークンは置換された語。
    */
-  function translateTokens(input) {
+  function translateTokens(rawInput) {
+    // NFKC正規化: 半角カナ(ﾀﾊﾞｺ)・全角英数などの表記揺れを吸収
+    const input = String(rawInput).normalize("NFKC");
     const buckets = getBuckets();
     const tokens = [];
     let plain = "";
