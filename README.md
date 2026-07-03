@@ -10,6 +10,16 @@
 > 例: 「昨日、友達とミルクバーで牛乳を飲んだ。」
 > → 「昨日、**ドルーグ**と**モロコ**バーで**モロコ**を**ピート**した。」
 
+## 公開ページ (GitHub Pages)
+
+https://hib3.github.io/nadsat-translator-jp/
+
+`.github/workflows/pages.yml` がブランチへのpushごとにテストを実行し、
+GitHub Pagesへ自動デプロイします。
+初回デプロイがエラーになる場合は、リポジトリの
+**Settings → Pages → Source** を **GitHub Actions** に設定してから
+Actionsタブでワークフローを再実行してください。
+
 ## 使い方
 
 `index.html` をブラウザで開くだけ(ビルド不要・依存なし)。
@@ -38,8 +48,9 @@ npx serve .        # または python3 -m http.server など任意の静的サ�
 
 ## 翻訳の仕組み
 
-1. **辞書**: Wiktionary「Appendix: A Clockwork Orange」等の公開ナッドサット語辞書の
-   全語彙を、カタカナ表記・日本語の意味・語源付きで収録
+1. **辞書**: GitHub上のNadsat辞書 [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)
+   の全エントリを逐語照合して収録(カタカナ表記・日本語の意味・語源付き)。
+   bedways / tick-tocker 等の補遺語は Wiktionary「Appendix: A Clockwork Orange」より
 2. **活用展開**: 動詞は「飲む/飲んだ/飲んで/飲みます…」→「ピートする/ピートした/
    ピートして/ピートします…」のように活用ごとに写像。い形容詞は
    「良い→ホラーショーな」「よかった→ホラーショーだった」のようにな形容詞へ写像
@@ -60,5 +71,6 @@ node scripts/generate-dictionary-md.js   # 対応表の再生成
 ## クレジット
 
 - Nadsat は Anthony Burgess『A Clockwork Orange』(1962) の造語スラング
-- 語彙の出典: [Wiktionary: Appendix: A Clockwork Orange](https://en.wiktionary.org/wiki/Appendix:A_Clockwork_Orange)、
-  [peevish.co.uk Nadsat Dictionary](http://www.peevish.co.uk/slang/articles/nadsat.htm)
+- 語彙の出典:
+  [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)(主要ソース・全エントリ照合済み)、
+  [Wiktionary: Appendix: A Clockwork Orange](https://en.wiktionary.org/wiki/Appendix:A_Clockwork_Orange)(補遺)
