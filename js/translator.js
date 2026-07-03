@@ -40,7 +40,9 @@
   };
 
   // 動詞の活用形 → 「(カタカナ語)+する」の対応する活用形
-  function expandVerb(base, type, out) {
+  // basicOnly=true の場合は基本形のみ(可能・受身・命令などの派生を作らない)。
+  // 「分かれ(→分かれる)」のような別語との衝突を避けるために使う。
+  function expandVerb(base, type, out, basicOnly) {
     const pairs = [];
     const push = (srcSuffix, dstSuffix) =>
       pairs.push([base.slice(0, -1) + srcSuffix, out + dstSuffix]);
@@ -55,16 +57,31 @@
       push("ます", "します");
       push("ました", "しました");
       push("ません", "しません");
+      push("ませんでした", "しませんでした");
       push("ましょう", "しましょう");
       push("たい", "したい");
       push("たかった", "したかった");
+      push("たくない", "したくない");
+      push("たくなかった", "したくなかった");
       push("たら", "したら");
       push("よう", "しよう");
       push("れば", "すれば");
       push("ろ", "しろ");
+      if (!basicOnly) {
+        push("ながら", "しながら");
+        push("ず", "せず");
+        push("すぎ", "しすぎ");
+        push("やすい", "しやすい");
+        push("に", "しに");
+        push("ちゃ", "しちゃ");   // 見ちゃった → ビディーしちゃった
+        push("られ", "され");     // 受身: 見られた → ビディーされた
+        push("させ", "させ");     // 使役: 見させる → ビディーさせる
+        push("れ", "でき");       // ら抜き可能: 見れる → ビディーできる
+      }
     } else {
       const g = GODAN[type.slice(2)]; // "v5u" → GODAN.u
       if (!g) return pairs;
+      const e = g.ba.slice(0, -1); // え段 (飲む→め)
       push(g.end, "する");
       push(g.ta, "した");
       push(g.te, "して");
@@ -74,11 +91,39 @@
       push(g.i + "ます", "します");
       push(g.i + "ました", "しました");
       push(g.i + "ません", "しません");
+      push(g.i + "ませんでした", "しませんでした");
       push(g.i + "ましょう", "しましょう");
       push(g.i + "たい", "したい");
       push(g.i + "たかった", "したかった");
+      push(g.i + "たくない", "したくない");
+      push(g.i + "たくなかった", "したくなかった");
       push(g.o, "しよう");
       push(g.ba, "すれば");
+      if (!basicOnly) {
+        push(g.i + "ながら", "しながら");
+        push(g.a + "ず", "せず");         // 言わずに → スカザットせずに
+        push(g.i + "すぎ", "しすぎ");     // 飲みすぎた → ピートしすぎた
+        push(g.i + "やすい", "しやすい");
+        push(g.i + "に", "しに");         // 飲みに行く → ピートしに…
+        push(g.i + "方", "し方");         // 飲み方 → ピートし方
+        // 〜ちゃった/じゃった (縮約)
+        const taBody = g.ta.slice(0, -1);
+        push(taBody + (g.ta.endsWith("だ") ? "じゃ" : "ちゃ"), "しちゃ");
+        push(g.a + "れ", "され");         // 受身: 殴られた → トルチョックされた
+        push(g.a + "せ", "させ");         // 使役: 飲ませる → ピートさせる
+        push(e, "しろ");                  // 命令: 飲め → ピートしろ
+        // 可能形 (命令形より長いキーが優先される)
+        push(e + "る", "できる");
+        push(e + "た", "できた");
+        push(e + "て", "できて");
+        push(e + "ない", "できない");
+        push(e + "なかった", "できなかった");
+        push(e + "ます", "できます");
+        push(e + "ました", "できました");
+        push(e + "ません", "できません");
+        push(e + "そう", "できそう");
+        push(e + "れば", "できれば");
+      }
     }
     return pairs;
   }
@@ -89,12 +134,21 @@
     const pairs = [
       [stem + "い", out + "な"],
       [stem + "かった", out + "だった"],
+      [stem + "かったら", out + "だったら"],
       [stem + "くない", out + "じゃない"],
       [stem + "くなかった", out + "じゃなかった"],
       [stem + "ければ", out + "なら"],
       [stem + "くて", out + "で"],
+      [stem + "さそう", out + "そう"], // 良さそう → ホラーショーそう
     ];
     if (!skipKu) pairs.push([stem + "く", out + "に"]);
+    // 語幹がひらがな1文字(「よ」「い」)だと「よそう」「いすぎ」等の
+    // 別語を壊すため、そう/すぎ は語幹2文字以上か漢字語幹のみ生成
+    const singleKana = [...stem].length === 1 && /^[ぁ-ゖ]$/.test(stem);
+    if (!singleKana) {
+      pairs.push([stem + "そう", out + "そう"]);   // 汚そう → グラズニーそう
+      pairs.push([stem + "すぎ", out + "すぎ"]);   // 汚すぎる → グラズニーすぎる
+    }
     return pairs;
   }
 
@@ -155,7 +209,8 @@
             add(s, o, entry);
           }
         } else if (type.startsWith("v")) {
-          for (const [s, o] of expandVerb(surface, type, out)) {
+          const basicOnly = item[3] === "basic";
+          for (const [s, o] of expandVerb(surface, type, out, basicOnly)) {
             add(s, o, entry);
           }
         }
@@ -211,19 +266,48 @@
         if (matched.val.entry === null) {
           // ブロックリスト語: そのまま通す
           plain += matched.surface;
+          i += matched.surface.length;
         } else {
           if (plain) {
             tokens.push({ text: plain, nadsat: false });
             plain = "";
           }
+          let outText = matched.val.out;
+          let consumed = matched.surface.length;
+          const rest = input.slice(i + consumed);
+
+          // --- 文脈に応じた自然化 ---
+          // な形容詞化した語(〜な)は、後続語に合わせて な/だ/削除 を切り替える
+          if (outText.endsWith("な")) {
+            if (/^(の|ん)/.test(rest)) {
+              // ホラーショーなの / ホラーショーなんだ → そのまま
+            } else if (/^(です|でし|か(?!ら)|さ|みたい|らしい|だろう)/.test(rest)) {
+              // 良いです→ホラーショーです / 良いだろう→ホラーショーだろう
+              outText = outText.slice(0, -1);
+            } else if (
+              rest === "" ||
+              /^[。．.!！?？\n\r、，]/.test(rest) ||
+              /^(ね|よ|わ|ぞ|ぜ|なあ|なぁ|な$|な[。!！?？\n\r]|けど|けれど|から|し|って|そう)/.test(rest) ||
+              /^と(?!き|ころ|こ)/.test(rest)
+            ) {
+              // 文末・引用・接続: 良い。→ホラーショーだ。/ 良いと思う→ホラーショーだと思う
+              outText = outText.slice(0, -1) + "だ";
+            }
+          }
+          // 「よかったです」→「ホラーショーでした」(「だったです」を回避)
+          if (outText.endsWith("だった") && rest.startsWith("です")) {
+            outText = outText.slice(0, -3) + "でした";
+            consumed += 2; // 後続の「です」を取り込む
+          }
+
           tokens.push({
-            text: matched.val.out,
+            text: outText,
             nadsat: true,
             orig: matched.surface,
             entry: matched.val.entry,
           });
+          i += consumed;
         }
-        i += matched.surface.length;
       } else {
         plain += input[i];
         i += 1;
