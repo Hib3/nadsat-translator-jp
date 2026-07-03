@@ -1,0 +1,13 @@
+{
+  "name": "nadsat-translator-jp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "日本語→ナッドサット語(時計じかけのオレンジ)翻訳Webアプリ",
+  "scripts": {
+    "test": "node tests/translator.test.js && node tests/morph.test.js",
+    "gen:dict": "node scripts/generate-dictionary-md.js"
+  },
+  "devDependencies": {
+    "kuromoji": "^0.1.2"
+  }
+}

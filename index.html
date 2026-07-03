@@ -84,6 +84,7 @@
             <span class="placeholder">ここに翻訳結果が表示されます…</span>
           </div>
           <p id="stats" class="stats"></p>
+          <p class="stats">形態素解析: <span id="morph-badge">読込中…</span></p>
         </div>
       </div>
       <p class="hint">
@@ -124,8 +125,11 @@
 
   <div id="toast" class="toast" role="status">コピーしました — ホラーショー!</div>
 
+  <!-- 形態素解析 (kuromoji.js・同梱)。読込に失敗しても表層マッチで動作する -->
+  <script src="assets/kuromoji/kuromoji.js"></script>
   <script src="js/dictionary.js"></script>
   <script src="js/translator.js"></script>
+  <script src="js/segmenter.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

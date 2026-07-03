@@ -227,26 +227,36 @@
     for (const list of buckets.values()) {
       list.sort((a, b) => b[0].length - a[0].length);
     }
-    return buckets;
+    return { buckets, table };
   }
 
-  let _buckets = null;
-  function getBuckets() {
-    if (!_buckets) _buckets = buildTable();
-    return _buckets;
+  let _compiled = null;
+  function getCompiled() {
+    if (!_compiled) _compiled = buildTable();
+    return _compiled;
   }
 
   /* ---------- 翻訳本体 ---------- */
 
+  /** NFKC正規化 (形態素解析側と同じテキストを共有するために公開) */
+  function normalizeText(s) {
+    return String(s).normalize("NFKC");
+  }
+
   /**
    * 日本語テキストをナッドサット語混じりの文に変換する。
+   * @param rawInput 入力文字列
+   * @param morph 形態素解析結果(任意)。normalizeText()後の文字列に対する
+   *   { boundaries: Set<number>, byStart: Map<開始位置, {surface, reading, pos}> }。
+   *   指定時は形態素境界に沿った変換を行い、誤変換を構造的に防ぐ。
+   *   さらに表層形で一致しない名詞は読み(カタカナ)でも辞書を引く。
    * @returns {Array<{text: string, nadsat: boolean, orig?: string, entry?: object}>}
    *   トークン列。nadsat=true のトークンは置換された語。
    */
-  function translateTokens(rawInput) {
+  function translateTokens(rawInput, morph) {
     // NFKC正規化: 半角カナ(ﾀﾊﾞｺ)・全角英数などの表記揺れを吸収
-    const input = String(rawInput).normalize("NFKC");
-    const buckets = getBuckets();
+    const input = normalizeText(rawInput);
+    const { buckets, table } = getCompiled();
     const tokens = [];
     let plain = "";
     let i = 0;
@@ -254,12 +264,40 @@
     while (i < input.length) {
       const candidates = buckets.get(input[i]);
       let matched = null;
-      if (candidates) {
-        for (const [surface, val] of candidates) {
-          if (input.startsWith(surface, i)) {
-            matched = { surface, val };
-            break; // 長い順に並んでいるので最初のヒットが最長一致
+      const atBoundary = !morph || morph.boundaries.has(i);
+      if (candidates && atBoundary) {
+        // 第1パス: 形態素境界に始点・終点とも一致するキー(最長一致)
+        if (morph) {
+          for (const [surface, val] of candidates) {
+            if (input.startsWith(surface, i) && morph.boundaries.has(i + surface.length)) {
+              matched = { surface, val };
+              break;
+            }
           }
+        }
+        // 第2パス: 始点のみ境界一致(「飲んじゃ」のような縮約形が
+        // 形態素をまたぐケースを救済。境界なし動作時はこちらのみ)
+        if (!matched) {
+          for (const [surface, val] of candidates) {
+            if (input.startsWith(surface, i)) {
+              matched = { surface, val };
+              break; // 長い順に並んでいるので最初のヒットが最長一致
+            }
+          }
+        }
+      }
+      // 第3パス: 表層形で引けない名詞を読み(カタカナ)で辞書引き
+      // 例: 「莨」(読み: タバコ) → キャンサー
+      if (!matched && morph && morph.byStart.has(i)) {
+        const m = morph.byStart.get(i);
+        if (
+          m.pos === "名詞" &&
+          m.reading &&
+          m.reading !== m.surface &&
+          table.has(m.reading)
+        ) {
+          const val = table.get(m.reading);
+          if (val.entry !== null) matched = { surface: m.surface, val };
         }
       }
       if (matched) {
@@ -318,13 +356,13 @@
   }
 
   /** プレーンテキストの翻訳結果を返す */
-  function translate(input) {
-    return translateTokens(input)
+  function translate(input, morph) {
+    return translateTokens(input, morph)
       .map((t) => t.text)
       .join("");
   }
 
-  const api = { translate, translateTokens };
+  const api = { translate, translateTokens, normalizeText };
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

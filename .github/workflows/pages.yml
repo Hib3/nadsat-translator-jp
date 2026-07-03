@@ -24,8 +24,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: 翻訳エンジンのテスト
-        run: node tests/translator.test.js
+      - name: 依存関係のインストール (kuromoji)
+        run: npm install --no-audit --no-fund
+      - name: 翻訳エンジンのテスト (表層マッチ + 形態素解析)
+        run: npm test
 
   deploy:
     needs: test

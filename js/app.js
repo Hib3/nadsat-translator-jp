@@ -14,7 +14,7 @@
   let lastPlain = "";
 
   function render() {
-    const text = input.value;
+    const text = NadsatTranslator.normalizeText(input.value);
     output.textContent = "";
     if (!text.trim()) {
       const ph = document.createElement("span");
@@ -26,7 +26,9 @@
       return;
     }
 
-    const tokens = NadsatTranslator.translateTokens(text);
+    // 形態素解析が使えれば境界情報を付与(誤変換防止+読みベースの辞書引き)
+    const morph = NadsatSegmenter.ready ? NadsatSegmenter.analyze(text) : null;
+    const tokens = NadsatTranslator.translateTokens(text, morph);
     let converted = 0;
     lastPlain = "";
 
@@ -139,4 +141,22 @@
 
   dictSearch.addEventListener("input", () => renderDict(dictSearch.value));
   renderDict("");
+
+  /* ---------- 形態素解析の初期化 ---------- */
+
+  const morphBadge = $("#morph-badge");
+  const KUROMOJI_DICT_URL = "assets/kuromoji/dict";
+
+  function initMorph(dicPath) {
+    morphBadge.textContent = "読込中…";
+    NadsatSegmenter.init(dicPath || window.NADSAT_DICT_PATH || KUROMOJI_DICT_URL, (ok) => {
+      morphBadge.textContent = ok
+        ? "ON(形態素境界に沿って変換)"
+        : "OFF(表層マッチで動作中)";
+      render(); // 解析器が使えるようになったら結果を更新
+    });
+  }
+
+  window.NadsatApp = { render, initMorph }; // テスト・デバッグ用フック
+  initMorph();
 })();

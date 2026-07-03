@@ -39,9 +39,11 @@ npx serve .        # または python3 -m http.server など任意の静的サ�
 | --- | --- |
 | `index.html` | アプリ本体(翻訳・対応表の2タブ) |
 | `css/style.css` | 黒×オレンジ×白のポスター風デザイン |
-| `js/dictionary.js` | ナッドサット語 全242語の辞書データ + 誤変換防止ブロックリスト |
-| `js/translator.js` | 翻訳エンジン(動詞・形容詞の活用展開 + 最長一致置換) |
+| `js/dictionary.js` | ナッドサット語 全302語の辞書データ + 誤変換防止ブロックリスト |
+| `js/translator.js` | 翻訳エンジン(動詞・形容詞の活用展開 + 最長一致置換 + 形態素境界対応) |
+| `js/segmenter.js` | kuromoji.js アダプタ(形態素境界・読みの索引を提供) |
 | `js/app.js` | UI配線(ライブ翻訳・コピー・辞書テーブル) |
+| `assets/kuromoji/` | kuromoji.js 本体とIPADIC辞書(同梱・オフライン動作) |
 | `DICTIONARY.md` | ナッドサット語⇔日本語 全語彙対応表(自動生成) |
 | `scripts/generate-dictionary-md.js` | DICTIONARY.md の生成スクリプト |
 | `tests/translator.test.js` | 翻訳エンジンのテスト |
@@ -67,20 +69,25 @@ npx serve .        # または python3 -m http.server など任意の静的サ�
 4. **表記揺れ対応**: 入力はNFKC正規化(半角カナ「ﾀﾊﾞｺ」等を吸収)し、
    かなのみの語はひらがな⇔カタカナを自動相互登録
    (「トモダチ」「たばこ」「いらいら」等もマッチ)
-
-形態素解析器を使わない軽量な実装のため、稀に複合語が意図せず変換されることが
-あります(それはそれでナッドサットらしい味になります)。
+5. **形態素解析 (kuromoji.js)**: ページ読込後にIPADIC辞書(同梱)を
+   非同期ロードし、変換を形態素境界に沿わせる。
+   これにより「流血」の中の「血」のような語中の誤変換を構造的に防ぎ、
+   表層形で引けない名詞は読みでも辞書を引く(「莨」→タバコ→キャンサー)。
+   辞書ロード前・失敗時は表層マッチのみで動作する(画面のバッジに表示)
 
 ## テスト
 
 ```
-node tests/translator.test.js
-node scripts/generate-dictionary-md.js   # 対応表の再生成
+npm install   # kuromoji (devDependency) を取得
+npm test      # 表層マッチ50件 + 形態素解析あり54件
+npm run gen:dict   # DICTIONARY.md の再生成
 ```
 
 ## クレジット
 
 - Nadsat は Anthony Burgess『A Clockwork Orange』(1962) の造語スラング
+- 形態素解析: [kuromoji.js](https://github.com/takuyaa/kuromoji.js) (Apache-2.0) と
+  IPADIC を同梱(`assets/kuromoji/` 内の LICENSE / NOTICE を参照)
 - 語彙の出典:
   [prozum/nadsat-dict](https://github.com/prozum/nadsat-dict)(原作巻末辞典系・全エントリ照合済み)、
   [m00k/nadsat-dictionary](https://github.com/m00k/nadsat-dictionary)(映画版追加語を含む拡張版・全エントリ照合済み)、
