@@ -221,6 +221,7 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  white-space: nowrap;
   font-family: var(--jp-font);
   font-weight: 700;
   font-size: 0.85rem;
@@ -365,3 +366,63 @@ footer {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---------- モバイル ---------- */
+
+@media (max-width: 600px) {
+  .hero { padding: 1.6rem 0.6rem 0; }
+  .hero-triangle { padding: 2.1rem 1rem 1.6rem; }
+  .hero-eye { width: 84px; margin-top: 0.6rem; }
+  /* 三角形の斜辺にタイトルが切られないよう小さめに */
+  .hero-title .jp { font-size: 1.42rem; letter-spacing: 0.02em; }
+  .hero-title .en { font-size: 0.72rem; letter-spacing: 0.3em; text-indent: 0.3em; }
+  .hero-sub { font-size: 0.78rem; letter-spacing: 0.12em; }
+
+  main { padding: 1.4rem 0.7rem 2rem; }
+
+  .tabs { gap: 0.3rem; }
+  .tab {
+    flex: 1;
+    padding: 0.65rem 0.4rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+  }
+
+  .io-grid { gap: 0.7rem; }
+  .io-box { padding: 0.85rem; }
+  textarea, .output { min-height: 140px; font-size: 1rem; line-height: 1.8; }
+  .io-arrow { font-size: 1.2rem; }
+
+  .examples { gap: 0.35rem; }
+  .example-btn {
+    font-size: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hint { font-size: 0.78rem; }
+
+  .dict-head { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  #dict-search { max-width: none; }
+  .dict-count { text-align: right; }
+  .dict-table { font-size: 0.82rem; min-width: 560px; } /* 横スクロールで全列閲覧 */
+  .dict-table th, .dict-table td { padding: 0.5rem 0.6rem; }
+
+  .toast {
+    width: calc(100% - 2rem);
+    text-align: center;
+    bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  footer { font-size: 0.72rem; padding: 1.2rem 0.8rem 1.8rem; }
+}
+
+/* タッチ端末: 変換語はタップで説明を出す(ホバー不可のため) */
+@media (hover: none) {
+  .output .nadsat { cursor: pointer; }
+}
+
+.table-wrap { -webkit-overflow-scrolling: touch; }

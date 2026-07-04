@@ -39,7 +39,10 @@
         const span = document.createElement("span");
         span.className = "nadsat";
         span.textContent = t.text;
-        span.title = `${t.orig} → ${t.entry.n} (${t.entry.m})`;
+        const info = `${t.orig} → ${t.entry.n} (${t.entry.m})`;
+        span.title = info;
+        // タッチ端末向け: タップで説明をトースト表示(ホバー代替)
+        span.addEventListener("click", () => showToast(info));
         output.appendChild(span);
       } else {
         output.appendChild(document.createTextNode(t.text));
